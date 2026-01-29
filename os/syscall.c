@@ -5,6 +5,8 @@
 #include "timer.h"
 #include "trap.h"
 
+static uint64 syscall_count;
+
 uint64 sys_write(int fd, char *str, uint len)
 {
 	debugf("sys_write fd = %d str = %x, len = %d", fd, str, len);
@@ -36,9 +38,11 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
 	return 0;
 }
 
-/*
-* LAB1: you may need to define sys_task_info here
-*/
+// LAB1 - define sys_task_info
+int sys_task_info(TaskInfo *ti)
+{
+	return -1;
+}
 
 extern char trap_page[];
 
@@ -50,9 +54,10 @@ void syscall()
 			   trapframe->a3, trapframe->a4, trapframe->a5 };
 	tracef("syscall %d args = [%x, %x, %x, %x, %x, %x]", id, args[0],
 	       args[1], args[2], args[3], args[4], args[5]);
-	/*
-	* LAB1: you may need to update syscall counter for task info here
-	*/
+	
+	// LAB1 - you may need to update syscall counter for task info here
+	syscall_count += 1;
+
 	switch (id) {
 	case SYS_write:
 		ret = sys_write(args[0], (char *)args[1], args[2]);
@@ -66,13 +71,15 @@ void syscall()
 	case SYS_gettimeofday:
 		ret = sys_gettimeofday((TimeVal *)args[0], args[1]);
 		break;
-	/*
-	* LAB1: you may need to add SYS_taskinfo case here
-	*/
+	case SYS_task_info:
+		// LAB1 - you may need to add SYS_taskinfo case here
+		ret = sys_task_info();
+		break;
 	default:
 		ret = -1;
 		errorf("unknown syscall %d", id);
 	}
+	
 	trapframe->a0 = ret;
 	tracef("syscall ret %d", ret);
 }

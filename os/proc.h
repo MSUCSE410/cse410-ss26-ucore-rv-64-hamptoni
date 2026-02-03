@@ -28,20 +28,7 @@ struct context {
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
-// Per-process state
-struct proc {
-	enum procstate state; // Process state
-	int pid; // Process ID
-	uint64 ustack; // Virtual address of user stack
-	uint64 kstack; // Virtual address of kernel stack
-	struct trapframe *trapframe; // data page for trampoline.S
-	struct context context; // swtch() here to run process
-	// LAB1: you may need to add some new fields here
-	// time? only init task info when doing syscall and not here
-	TaskInfo *taskinfo;
-};
-
-// LAB1: you may need to define struct for TaskInfo here
+// LAB1 - you may need to define struct for TaskInfo here
 typedef enum {
 	UnInit,
 	Ready,
@@ -54,6 +41,19 @@ typedef struct {
 	unsigned int syscall_times[MAX_SYSCALL_NUM];
 	int time;
 } TaskInfo;
+
+// Per-process state
+struct proc {
+	enum procstate state; // Process state
+	int pid; // Process ID
+	uint64 ustack; // Virtual address of user stack
+	uint64 kstack; // Virtual address of kernel stack
+	struct trapframe *trapframe; // data page for trampoline.S
+	struct context context; // swtch() here to run process
+	// LAB1 - you may need to add some new fields here
+	int startTime;
+	TaskInfo taskInfo;
+};
 
 struct proc *curr_proc();
 void exit(int);

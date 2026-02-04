@@ -49,11 +49,7 @@ int run_all_app()
 		trapframe->sp = (uint64)p->ustack + USER_STACK_SIZE;
 		p->state = RUNNABLE;
 		// LAB1 - you may need to initialize your new fields of proc here
-		// init status
-		// init syscall times
-		for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
-			p->taskInfo.syscall_times[i] = 0;
-		}
+		p->taskInfo.status = Ready;
 	}
 	return 0;
 }

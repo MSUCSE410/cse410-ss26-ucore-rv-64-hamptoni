@@ -5,6 +5,8 @@
 #include "timer.h"
 #include "trap.h"
 
+#include "time_helper.c"
+
 uint64 sys_write(int fd, char *str, uint len)
 {
 	debugf("sys_write fd = %d str = %x, len = %d", fd, str, len);
@@ -41,8 +43,8 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
  */
 int sys_task_info(TaskInfo *ti)
 {
-	// update status
 	// update time
+	ti->time = curr_proc()->infoTime - curr_proc()->scheduledTime;
 	return 0;
 }
 
@@ -75,6 +77,7 @@ void syscall()
 		break;
 	case SYS_task_info:
 		// LAB1 - you may need to add SYS_taskinfo case here
+		curr_proc()->infoTime = get_time_as_int();
 		sys_task_info((TaskInfo *)args[0]);
 		break;
 	default:

@@ -48,6 +48,11 @@ int sys_task_info(TaskInfo *ti)
 	return 0;
 }
 
+int sys_getpid()
+{
+	return curr_proc()->pid;
+}
+
 extern char trap_page[];
 
 void syscall()
@@ -79,6 +84,9 @@ void syscall()
 		// LAB1 - you may need to add SYS_taskinfo case here
 		curr_proc()->infoTime = get_time_as_int();
 		sys_task_info((TaskInfo *)args[0]);
+		break;
+	case SYS_getpid:
+		ret = sys_getpid();
 		break;
 	default:
 		ret = -1;

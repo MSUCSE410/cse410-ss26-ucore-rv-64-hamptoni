@@ -5,7 +5,7 @@
 #include "timer.h"
 #include "trap.h"
 
-#include "time_helper.c"
+#include "time_helper.h"
 
 uint64 sys_write(int fd, char *str, uint len)
 {
@@ -53,7 +53,7 @@ extern char trap_page[];
 void syscall()
 {
 	struct trapframe *trapframe = curr_proc()->trapframe;
-	int id = trapframe->a7, ret;
+	int id = trapframe->a7, ret = 0;
 	uint64 args[6] = { trapframe->a0, trapframe->a1, trapframe->a2,
 			   trapframe->a3, trapframe->a4, trapframe->a5 };
 	tracef("syscall %d args = [%x, %x, %x, %x, %x, %x]", id, args[0],

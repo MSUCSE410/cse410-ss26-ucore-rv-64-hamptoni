@@ -3,7 +3,7 @@
 #include "loader.h"
 #include "trap.h"
 
-#include "time_helper.c"
+#include "time_helper.h"
 
 struct proc pool[NPROC];
 char kstack[NPROC][PAGE_SIZE];

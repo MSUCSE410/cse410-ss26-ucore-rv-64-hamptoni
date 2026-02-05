@@ -34,7 +34,7 @@ void proc_init(void)
 		p->ustack = (uint64)ustack[p - pool];
 		p->trapframe = (struct trapframe *)trapframe[p - pool];
 		// LAB - you may need to initialize your new fields of proc here
-		p->taskInfo.status = UnInit;
+		p->taskInfo.status = Ready;
 		for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
 			p->taskInfo.syscall_times[i] = 0;
 		}
@@ -90,9 +90,7 @@ void scheduler(void)
 			if (p->state == RUNNABLE) {
 				// LAB1 - you may need to init proc start time here
 				p->taskInfo.status = Running;
-				if (p->scheduledTime == 0) {
-					p->scheduledTime = get_time_as_int();    
-				}
+				p->scheduledTime = get_time_as_int();
 				p->state = RUNNING;
 				current_proc = p;
 				swtch(&idle.context, &p->context);

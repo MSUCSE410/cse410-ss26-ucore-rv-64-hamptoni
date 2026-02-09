@@ -43,8 +43,15 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
  */
 int sys_task_info(TaskInfo *ti)
 {
-	// update time
-	ti->time = curr_proc()->infoTime - curr_proc()->scheduledTime;
+	struct proc *p = curr_proc();
+    // update time
+    ti->time = get_time_as_int() - p->scheduledTime;
+	// update status
+	ti->status = p->taskInfo.status;
+	// update syscall counts
+	for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
+        ti->syscall_times[i] = p->taskInfo.syscall_times[i];
+    }
 	return 0;
 }
 
@@ -82,7 +89,6 @@ void syscall()
 		break;
 	case SYS_task_info:
 		// LAB1 - you may need to add SYS_taskinfo case here
-		curr_proc()->infoTime = get_time_as_int();
 		sys_task_info((TaskInfo *)args[0]);
 		break;
 	case SYS_getpid:

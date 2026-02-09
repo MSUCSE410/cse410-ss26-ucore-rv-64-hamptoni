@@ -40,7 +40,6 @@ void proc_init(void)
 		}
 		p->taskInfo.time = 0;
 		p->scheduledTime = 0;
-		p->infoTime = 0;
 	}
 	idle.kstack = (uint64)boot_stack_top;
 	idle.pid = 0;
@@ -90,7 +89,9 @@ void scheduler(void)
 			if (p->state == RUNNABLE) {
 				// LAB1 - you may need to init proc start time here
 				p->taskInfo.status = Running;
-				p->scheduledTime = get_time_as_int();
+				if (p->scheduledTime == 0) {
+					p->scheduledTime = get_time_as_int();
+				}
 				p->state = RUNNING;
 				current_proc = p;
 				swtch(&idle.context, &p->context);

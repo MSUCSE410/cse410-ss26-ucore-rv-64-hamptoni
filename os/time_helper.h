@@ -1,3 +1,3 @@
 #include <stdint.h>
 
-int get_time_as_int(void);
+int gettime_as_int(void);

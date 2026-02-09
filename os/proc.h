@@ -51,7 +51,7 @@ struct proc {
 	struct trapframe *trapframe; // data page for trampoline.S
 	struct context context; // swtch() here to run process
 	// LAB1 - you may need to add some new fields here
-	int scheduledTime;
+	uint64 scheduledCycle;
 	TaskInfo taskInfo;
 };
 

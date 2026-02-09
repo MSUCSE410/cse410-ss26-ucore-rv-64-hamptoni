@@ -5,8 +5,6 @@
 #include "timer.h"
 #include "trap.h"
 
-#include "time_helper.h"
-
 uint64 sys_write(int fd, char *str, uint len)
 {
 	debugf("sys_write fd = %d str = %x, len = %d", fd, str, len);
@@ -39,13 +37,28 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
 }
 
 /**
+ * LAB1 - helper functions for sys_task_info
+ */
+
+int calculate_time(void) {
+    struct proc *p = curr_proc();
+    uint64 cycle = get_cycle();
+	return (int)(((cycle - p->scheduledCycle)  * 1000 / CPU_FREQ));
+}
+
+int sys_getpid()
+{
+	return curr_proc()->pid;
+}
+
+/**
  * LAB1 - define sys_task_info
  */
 int sys_task_info(TaskInfo *ti)
 {
 	struct proc *p = curr_proc();
     // update time
-    ti->time = get_time_as_int() - p->scheduledTime;
+    ti->time = calculate_time();
 	// update status
 	ti->status = p->taskInfo.status;
 	// update syscall counts
@@ -53,11 +66,6 @@ int sys_task_info(TaskInfo *ti)
         ti->syscall_times[i] = p->taskInfo.syscall_times[i];
     }
 	return 0;
-}
-
-int sys_getpid()
-{
-	return curr_proc()->pid;
 }
 
 extern char trap_page[];

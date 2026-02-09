@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "loader.h"
 #include "trap.h"
+#include "timer.h"
 
 #include "time_helper.h"
 
@@ -39,7 +40,7 @@ void proc_init(void)
 			p->taskInfo.syscall_times[i] = 0;
 		}
 		p->taskInfo.time = 0;
-		p->scheduledTime = 0;
+		p->scheduledCycle = 0;
 	}
 	idle.kstack = (uint64)boot_stack_top;
 	idle.pid = 0;
@@ -89,8 +90,8 @@ void scheduler(void)
 			if (p->state == RUNNABLE) {
 				// LAB1 - you may need to init proc start time here
 				p->taskInfo.status = Running;
-				if (p->scheduledTime == 0) {
-					p->scheduledTime = get_time_as_int();
+				if (p->scheduledCycle == 0) {
+					p->scheduledCycle = get_cycle();
 				}
 				p->state = RUNNING;
 				current_proc = p;

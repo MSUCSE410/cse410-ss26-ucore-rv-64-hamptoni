@@ -3,6 +3,7 @@
 #include "loader.h"
 #include "trap.h"
 #include "vm.h"
+#include "timer.h"
 
 struct proc pool[NPROC];
 __attribute__((aligned(16))) char kstack[NPROC][PAGE_SIZE];
@@ -30,9 +31,13 @@ void proc_init(void)
 		p->state = UNUSED;
 		p->kstack = (uint64)kstack[p - pool];
 		p->trapframe = (struct trapframe *)trapframe[p - pool];
-		/*
-		* LAB1: you may need to initialize your new fields of proc here
-		*/
+		// LAB - you may need to initialize your new fields of proc here
+		p->taskInfo.status = Ready;
+		for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
+			p->taskInfo.syscall_times[i] = 0;
+		}
+		p->taskInfo.time = 0;
+		p->scheduledCycle = 0;
 	}
 	idle.kstack = (uint64)boot_stack_top;
 	idle.pid = 0;
@@ -83,9 +88,11 @@ void scheduler(void)
 	for (;;) {
 		for (p = pool; p < &pool[NPROC]; p++) {
 			if (p->state == RUNNABLE) {
-				/*
-				* LAB1: you may need to init proc start time here
-				*/
+				// LAB1 - you may need to init proc start time here
+				p->taskInfo.status = Running;
+				if (p->scheduledCycle == 0) {
+					p->scheduledCycle = get_cycle();
+				}
 				p->state = RUNNING;
 				current_proc = p;
 				swtch(&idle.context, &p->context);
@@ -113,6 +120,7 @@ void sched(void)
 void yield(void)
 {
 	current_proc->state = RUNNABLE;
+	current_proc->taskInfo.status = Ready;
 	sched();
 }
 
@@ -127,6 +135,7 @@ void exit(int code)
 {
 	struct proc *p = curr_proc();
 	infof("proc %d exit with %d", p->pid, code);
+	p->taskInfo.status = Exited;
 	freeproc(p);
 	finished();
 	sched();

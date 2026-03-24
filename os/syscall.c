@@ -32,17 +32,28 @@ uint64 sys_sched_yield()
 	return 0;
 }
 
-uint64 sys_gettimeofday(TimeVal *val, int _tz) // TODO: implement sys_gettimeofday in pagetable. (VA to PA)
+// TODO LAB2: implement sys_gettimeofday in pagetable. (VA to PA)
+uint64 sys_gettimeofday(TimeVal *val, int _tz)
 {
-	// YOUR CODE
-	val->sec = 0;
-	val->usec = 0;
+	// get current process
+	struct proc *p = curr_proc();
+
+	// get corresponding physical address, not safe to use virtual address passed in by process
+	uint64 phys_addr = useraddr(p->pagetable, (uint64)val);
+
+	// fetch corresponding val pointer from phys addr
+	TimeVal *phys_val = (TimeVal *)phys_addr;
+
+	// now we can finally do get time of day work
+	uint64 cycle = get_cycle();
+	phys_val->sec = cycle / CPU_FREQ;
+	phys_val->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
 
 	/* The code in `ch3` will leads to memory bugs*/
-
 	// uint64 cycle = get_cycle();
 	// val->sec = cycle / CPU_FREQ;
 	// val->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
+
 	return 0;
 }
 
@@ -59,7 +70,7 @@ int sys_getpid()
 	return curr_proc()->pid;
 }
 
-// TODO: add support for mmap and munmap syscall.
+// TODO LAB2: add support for mmap and munmap syscall.
 // hint: read through docstrings in vm.c. Watching CH4 video may also help.
 // Note the return value and PTE flags (especially U,X,W,R)
 

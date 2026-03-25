@@ -215,7 +215,16 @@ void syscall()
 		sys_task_info((TaskInfo *)args[0]);
 		break;
 	case SYS_getpid:
+		// LAB1 - needed to add this to get task_info to work
 		ret = sys_getpid();
+		break;
+	case SYS_mmap:
+		// LAB2
+		ret = sys_mmap(args[0], args[1], args[2], args[3], args[4]);
+		break;
+	case SYS_munmap:
+		// LAB2
+		ret = sys_munmap(args[0], args[1]);
 		break;
 	default:
 		ret = -1;

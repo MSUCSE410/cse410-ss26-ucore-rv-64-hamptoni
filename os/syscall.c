@@ -32,7 +32,7 @@ uint64 sys_sched_yield()
 	return 0;
 }
 
-// TODO LAB2: implement sys_gettimeofday in pagetable. (VA to PA)
+// LAB2: implement sys_gettimeofday in pagetable. (VA to PA)
 uint64 sys_gettimeofday(TimeVal *val, int _tz)
 {
 	// get current process
@@ -75,6 +75,98 @@ int sys_getpid()
 // Note the return value and PTE flags (especially U,X,W,R)
 
 /*
+ * LAB2: sys_mmap implementation
+ * 
+ * address must be page aligned otherwise report error
+ * length can be rounded up to the nearest page
+ * ignore parameters flag and fd for now
+ * 
+ * note - page recovery in case of allocation failure is not considered
+ */
+uint64 sys_mmap(uint64 start, uint64 len, int port, int flag, int fd)
+{
+	// error - address is not page-aligned
+	if (start % PGSIZE != 0)
+        return -1;
+
+	// error - other bits of port must be 0
+	if ((port & ~0x7) != 0)
+        return -1;
+
+	// error - port must specify some permissions (not be zero)
+	if ((port & 0x7) == 0)
+        return -1;
+
+	// setup
+	struct proc *p = curr_proc();    // get current process
+	len = PGROUNDUP(len);            // round up length if needed
+
+	// apply permissions based on port bits
+	//    need to convert between port bit and PTE bit
+	//    must start with PTE_U
+	//    can use bitwise OR to add each permission
+	int p_bits = PTE_U;                
+    if (port & 0x1) p_bits = p_bits | PTE_R;    // read = bit 0 = 001
+    if (port & 0x2) p_bits = p_bits | PTE_W;    // write = bit 1 = 010
+    if (port & 0x4) p_bits = p_bits | PTE_X;    // execute = bit 2 = 100
+
+	// iterate through pages we need to verify they are unmapped
+	//    walkaddr returns 0 if page is not mapped
+	//    so if we get a non-zero return value we know this page already has data and should error
+	//    page_index is the virtual memory address
+    for (uint64 page_index = start; page_index < start + len; page_index += PGSIZE) {
+        if (walkaddr(p->pagetable, page_index) != 0)
+			// error - a page we want is already mapped
+            return -1;
+    }
+
+	// allocate memory
+	//    kalloc can only allocate one page at a time
+	//    therefore we must iterate across the pages like we did above
+    for (uint64 page_index = start; page_index < start + len; page_index += PGSIZE) {
+        char *mem = kalloc();
+        if (mem == 0)
+			// error - failed to allocate memory
+            return -1;
+        memset(mem, 0, PGSIZE);    // wipe old data
+		// need to use mappages to create the actual page table entries
+        if (mappages(p->pagetable, page_index, PGSIZE, (uint64)mem, p_bits) != 0)
+			// error - failed to allocate memory
+            return -1;
+    }		
+
+	return 0;
+}
+
+/*
+ * LAB2: sys_munmap implementation
+ * 
+ * note - memory recovery and reclamation not considered
+ */
+uint64 sys_munmap(uint64 start, uint64 len)
+{
+	// error - address is not page-aligned
+	if (start % PGSIZE != 0)
+        return -1;
+	
+	// setup
+	struct proc *p = curr_proc();    // get current process
+	len = PGROUNDUP(len);            // round up length if needed
+
+	// iterate through pages we need to verify they are all mapped
+    for (uint64 page_index = start; page_index < start + len; page_index += PGSIZE) {
+        if (walkaddr(p->pagetable, page_index) == 0)
+			// error - a page we want to clear is already unmapped
+            return -1;
+    }
+
+	// clear pages
+	uvmunmap(p->pagetable, start, len/PGSIZE, 0);
+
+	return 0;
+}
+
+/*
  * LAB1: you may need to define sys_task_info here
  */
 int sys_task_info(TaskInfo *ti)
@@ -96,7 +188,7 @@ extern char trap_page[];
 void syscall()
 {
 	struct trapframe *trapframe = curr_proc()->trapframe;
-	int id = trapframe->a7, ret;
+	int id = trapframe->a7, ret = 0;
 	uint64 args[6] = { trapframe->a0, trapframe->a1, trapframe->a2,
 			   trapframe->a3, trapframe->a4, trapframe->a5 };
 	tracef("syscall %d args = [%x, %x, %x, %x, %x, %x]", id, args[0],

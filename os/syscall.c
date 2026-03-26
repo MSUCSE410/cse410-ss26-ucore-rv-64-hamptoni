@@ -32,6 +32,19 @@ uint64 sys_sched_yield()
 	return 0;
 }
 
+/**
+ * LAB1 - helper functions for sys_task_info
+ */
+int calculate_time(void) {
+    struct proc *p = curr_proc();
+    uint64 cycle = get_cycle();
+	return (int)(((cycle - p->scheduledCycle)  * 1000 / CPU_FREQ));
+}
+int sys_getpid()
+{
+	return curr_proc()->pid;
+}
+
 // LAB2: implement sys_gettimeofday in pagetable. (VA to PA)
 uint64 sys_gettimeofday(TimeVal *val, int _tz)
 {
@@ -57,17 +70,24 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
 	return 0;
 }
 
-/**
- * LAB1 - helper functions for sys_task_info
+/*
+ * LAB2: reimplement sys_task_info here
  */
-int calculate_time(void) {
-    struct proc *p = curr_proc();
-    uint64 cycle = get_cycle();
-	return (int)(((cycle - p->scheduledCycle)  * 1000 / CPU_FREQ));
-}
-int sys_getpid()
+int sys_task_info(TaskInfo *ti)
 {
-	return curr_proc()->pid;
+	// lab2 upgrade
+	struct proc *p = curr_proc();
+	uint64 phys_addr = useraddr(p->pagetable, (uint64)ti);
+	TaskInfo *phys_ti = (TaskInfo *)phys_addr;
+
+	// work
+	phys_ti->time = calculate_time();    // update time
+	phys_ti->status = p->taskInfo.status;    // update status
+	// update syscall counts
+	for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
+        phys_ti->syscall_times[i] = p->taskInfo.syscall_times[i];
+    }
+	return 0;
 }
 
 // TODO LAB2: add support for mmap and munmap syscall.
@@ -163,23 +183,6 @@ uint64 sys_munmap(uint64 start, uint64 len)
 	// clear pages
 	uvmunmap(p->pagetable, start, len/PGSIZE, 0);
 
-	return 0;
-}
-
-/*
- * LAB1: you may need to define sys_task_info here
- */
-int sys_task_info(TaskInfo *ti)
-{
-	struct proc *p = curr_proc();
-    // update time
-	ti->time = calculate_time();
-	// update status
-	ti->status = p->taskInfo.status;
-	// update syscall counts
-	for (int i = 0; i < MAX_SYSCALL_NUM; i++) {
-        ti->syscall_times[i] = p->taskInfo.syscall_times[i];
-    }
 	return 0;
 }
 
